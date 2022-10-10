@@ -3,6 +3,7 @@ import pyAesCrypt
 from Crypto.Cipher import AES, DES
 import io
 from Crypto import Random
+from base64 import *
 
 # define ip and port
 HOST = 'localhost'
@@ -59,12 +60,19 @@ def encryptFileAES(filename):
 				elif len(block)%16 != 0:
 					block += b' '*(16-(len(block)%16))
 				outFile.write(encryptor.encrypt(block))
+
+				# make new file for base64
+				base64_fileName = "base64_" + filename
+				f = open(base64_fileName, "a")
+				base64_file = (b64encode(encryptor.encrypt(block)))
+				f.write(str(base64_file))
+				f.close()
 	try:
 		return 'Encryption process for file ' + filename + ' complete.\n'
 	except:
 		return 'Oops! There is an error while encrypting.\n'
 
-# Decrypt file AES
+# decrypt file AES
 def decryptFileAES(filename):
 	blockSize = 64*1024
 	outputFile = "(dec)" + filename
@@ -89,36 +97,36 @@ def decryptFileAES(filename):
 
 # Encrypt file DES
 def encryptFileDES(filename):
-	chunksize = 64*1024
+	blockSize = 64*1024
 	outputFile = "(des)"+filename
 	filesize = str(os.path.getsize(filename)).zfill(16)
 	IV = Random.new().read(8)
 	key = b'kijc2022'
 	encryptor = DES.new(key, DES.MODE_CBC, IV)
 
-	with open(filename, 'rb') as infile:#rb means read in binary
-		with open(outputFile, 'wb') as outfile:#wb means write in the binary mode
+	with open(filename, 'rb') as infile:
+		with open(outputFile, 'wb') as outfile:
 			outfile.write(filesize.encode('utf-8'))
 			outfile.write(IV)
 
 			while True:
-				chunk = infile.read(chunksize)
+				block = infile.read(blockSize)
 
-				if len(chunk) == 0:
+				if len(block) == 0:
 					break
-				elif len(chunk)%16 != 0:
-					chunk += b' '*(16-(len(chunk)%16))
+				elif len(block)%16 != 0:
+					block += b' '*(16-(len(block)%16))
 
-				outfile.write(encryptor.encrypt(chunk))
+				outfile.write(encryptor.encrypt(block))
 	try:
-		return '> Encrypted: ' + filename + ' complete.\n'
+		return 'Encryption process for file ' + filename + ' complete.\n'
 	except:
-		return '> Error while encrypting, try again.\n'
+		return 'Oops! There is an error while encrypting.\n'
 
 # Decrypt file DES
 def decryptFileDES(filename):
-	chunksize = 64*1024
-	outputFile = filename[11:]
+	blockSize = 64*1024
+	outputFile = "(dec)" + filename
 
 	with open(filename, 'rb') as infile:
 		filesize = int(infile.read(16))
@@ -128,18 +136,18 @@ def decryptFileDES(filename):
 
 		with open(outputFile, 'wb') as outfile:
 			while True:
-				chunk = infile.read(chunksize)
+				block = infile.read(blockSize)
 
-				if len(chunk) == 0:
+				if len(block) == 0:
 					break
 
-				outfile.write(decryptor.decrypt(chunk))
+				outfile.write(decryptor.decrypt(block))
 
 			outfile.truncate(filesize)
 	try:
-		return '> Decrypted: ' + outputFile + '\n'
+		return 'Decryption process for file ' + filename + ' complete.\n'
 	except:
-		return '> Error while decrypting, try again.\n'
+		return 'Oops! There is an error while decrypting.\n'
 
 s.sendall(encryptData('SYMMETRIC CIPHER\n'))
 s.sendall(encryptData('EOFX'))
