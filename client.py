@@ -1,6 +1,6 @@
 import socket,os
 import pyAesCrypt
-from Crypto.Cipher import AES
+from Crypto.Cipher import AES, DES
 import io
 from Crypto import Random
 
@@ -87,6 +87,60 @@ def decryptFileAES(filename):
 	except:
 		return 'Oops! There is an error while decrypting.\n'
 
+# Encrypt file DES
+def encryptFileDES(filename):
+	chunksize = 64*1024
+	outputFile = "(des)"+filename
+	filesize = str(os.path.getsize(filename)).zfill(16)
+	IV = Random.new().read(8)
+	key = b'kijc2022'
+	encryptor = DES.new(key, DES.MODE_CBC, IV)
+
+	with open(filename, 'rb') as infile:#rb means read in binary
+		with open(outputFile, 'wb') as outfile:#wb means write in the binary mode
+			outfile.write(filesize.encode('utf-8'))
+			outfile.write(IV)
+
+			while True:
+				chunk = infile.read(chunksize)
+
+				if len(chunk) == 0:
+					break
+				elif len(chunk)%16 != 0:
+					chunk += b' '*(16-(len(chunk)%16))
+
+				outfile.write(encryptor.encrypt(chunk))
+	try:
+		return '> Encrypted: ' + filename + ' complete.\n'
+	except:
+		return '> Error while encrypting, try again.\n'
+
+# Decrypt file DES
+def decryptFileDES(filename):
+	chunksize = 64*1024
+	outputFile = filename[11:]
+
+	with open(filename, 'rb') as infile:
+		filesize = int(infile.read(16))
+		IV = infile.read(8)
+		key = b'kijc2022'
+		decryptor= DES.new(key, DES.MODE_CBC, IV)
+
+		with open(outputFile, 'wb') as outfile:
+			while True:
+				chunk = infile.read(chunksize)
+
+				if len(chunk) == 0:
+					break
+
+				outfile.write(decryptor.decrypt(chunk))
+
+			outfile.truncate(filesize)
+	try:
+		return '> Decrypted: ' + outputFile + '\n'
+	except:
+		return '> Error while decrypting, try again.\n'
+
 s.sendall(encryptData('SYMMETRIC CIPHER\n'))
 s.sendall(encryptData('EOFX'))
 
@@ -111,6 +165,22 @@ while 1:
 				s.sendall(encryptData(encryptFileAES(args['file'])))
 			if (decrypted[:15] == "decryptFileAES "): 
 				s.sendall(encryptData(decryptFileAES(args['file'])))
+		s.sendall(encryptData('EOFX'))
+	elif decrypted[:15] == "encryptFileDES " or decrypted[:15] == "decryptFileDES ":
+		try:
+			args = dict(e.split('=') for e in decrypted[15:].split(', '))
+			if len(args['file']):
+				pass
+			else:
+				args = 0
+		except:
+			args = 0
+			s.sendall(encryptData('Error: invalid arguments.\n'))
+		if args:
+			if (decrypted[:15] == "encryptFileDES "):
+				s.sendall(encryptData(encryptFileDES(args['file'])))
+			if (decrypted[:15] == "decryptFileDES "):
+				s.sendall(encryptData(decryptFileDES(args['file'])))
 		s.sendall(encryptData('EOFX'))
 	else:
 		s.sendall(encryptData('Command Not Found\n'))
