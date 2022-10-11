@@ -51,6 +51,7 @@ def decryptData(msg):
 
 
 def encryptFileAES(filename):
+    start = time.time()
     blockSize = 64*1024
     outputFile = "(aes)"+filename
     filesize = str(os.path.getsize(filename)).zfill(16)
@@ -73,13 +74,16 @@ def encryptFileAES(filename):
                 outFile.write(encryptor.encrypt(block))
 
                 # make new file for base64
-                base64_fileName = "base64_" + filename
+                base64_fileName = "base64_aes_" + filename
                 f = open(base64_fileName, "a")
                 base64_file = (b64encode(encryptor.encrypt(block)))
                 f.write(str(base64_file))
                 f.close()
+
+    end = time.time()
+    runtime = (end-start) * 10**3
     try:
-        return 'Encryption process for file ' + filename + ' complete.\n'
+        return 'Encryption process for file ' + filename + ' complete.\n' + 'execution time ' + str(runtime) + 'ms.\n'
     except:
         return 'Oops! There is an error while encrypting.\n'
 
@@ -87,6 +91,7 @@ def encryptFileAES(filename):
 
 
 def decryptFileAES(filename):
+    start = time.time()
     blockSize = 64*1024
     outputFile = "(dec)" + filename
 
@@ -101,10 +106,13 @@ def decryptFileAES(filename):
                 block = inFile.read(blockSize)
                 if len(block) == 0:
                     break
-                outFile.write(decryptor.decrypt(block))
+                outFile.write(b64decode(decryptor.decrypt(block)))
             outFile.truncate(filesize)
+
+    end = time.time()
+    runtime = (end - start) * 10**3
     try:
-        return 'Decryption process for file ' + filename + ' complete.\n'
+        return 'Decryption process for file ' + filename + ' complete.\n' + 'execution time ' + str(runtime) + 'ms.\n'
     except:
         return 'Oops! There is an error while decrypting.\n'
 
@@ -112,6 +120,7 @@ def decryptFileAES(filename):
 
 
 def encryptFileDES(filename):
+    start = time.time()
     blockSize = 64*1024
     outputFile = "(des)"+filename
     filesize = str(os.path.getsize(filename)).zfill(16)
@@ -133,8 +142,18 @@ def encryptFileDES(filename):
                     block += b' '*(16-(len(block) % 16))
 
                 outfile.write(encryptor.encrypt(block))
+
+                # make new file for base64
+                base64_fileName = "base64_des_" + filename
+                f = open(base64_fileName, "a")
+                base64_file = (b64encode(encryptor.encrypt(block)))
+                f.write(str(base64_file))
+                f.close()
+
+    end = time.time()
+    runtime = (end - start) * 10**3
     try:
-        return 'Encryption process for file ' + filename + ' complete.\n'
+        return 'Encryption process for file ' + filename + ' complete.\n' + 'execution time ' + str(runtime) + 'ms.\n'
     except:
         return 'Oops! There is an error while encrypting.\n'
 
@@ -142,6 +161,7 @@ def encryptFileDES(filename):
 
 
 def decryptFileDES(filename):
+    start = time.time()
     blockSize = 64*1024
     outputFile = "(dec)" + filename
 
@@ -161,8 +181,11 @@ def decryptFileDES(filename):
                 outfile.write(decryptor.decrypt(block))
 
             outfile.truncate(filesize)
+
+    end = time.time()
+    runtime = (end - start) * 10**3
     try:
-        return 'Decryption process for file ' + filename + ' complete.\n'
+        return 'Decryption process for file ' + filename + ' complete.\n' + 'execution time ' + str(runtime) + 'ms.\n'
     except:
         return 'Oops! There is an error while decrypting.\n'
 
@@ -170,6 +193,7 @@ def decryptFileDES(filename):
 
 
 def encryptFileRC4(filename):
+    start = time.time()
     chunksize = 64*1024
     outputFile = "(rc4)"+filename
     filesize = str(os.path.getsize(filename)).zfill(16)
@@ -193,8 +217,17 @@ def encryptFileRC4(filename):
                     chunk += b' '*(16-(len(chunk) % 16))
 
                 outfile.write(encryptor.encrypt(chunk))
+                # make new file for base64
+                base64_fileName = "base64_rc4_" + filename
+                f = open(base64_fileName, "a")
+                base64_file = (b64encode(encryptor.encrypt(chunk)))
+                f.write(str(base64_file))
+                f.close()
+
+    end = time.time()
+    runtime = (end - start) * 10 ** 3
     try:
-        return '> Encrypted: ' + filename + ' complete.\n'
+        return '> Encrypted: ' + filename + ' complete.\n' + 'execution time ' + str(runtime) + 'ms.\n'
     except:
         return '> Error while encrypting, try again.\n'
 
@@ -202,6 +235,7 @@ def encryptFileRC4(filename):
 
 
 def decryptFileRC4(filename):
+    start = time.time()
     chunksize = 64*1024
     outputFile = "(dec)" + filename
 
@@ -223,8 +257,11 @@ def decryptFileRC4(filename):
                 outfile.write(decryptor.decrypt(chunk))
 
             outfile.truncate(filesize)
+
+    end = time.time()
+    runtime = (end - start) * 10 ** 3
     try:
-        return '> Decrypted: ' + outputFile + '\n'
+        return '> Decrypted: ' + outputFile + '\n' + 'execution time ' + str(runtime) + 'ms.\n'
     except:
         return '> Error while decrypting, try again.\n'
 
