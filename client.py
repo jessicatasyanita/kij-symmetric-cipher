@@ -106,7 +106,7 @@ def decryptFileAES(filename):
                 block = inFile.read(blockSize)
                 if len(block) == 0:
                     break
-                outFile.write(b64decode(decryptor.decrypt(block)))
+                outFile.write(decryptor.decrypt(block))
             outFile.truncate(filesize)
 
     end = time.time()
