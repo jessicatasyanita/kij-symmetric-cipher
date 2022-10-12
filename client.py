@@ -7,8 +7,8 @@ import sys
 import time
 import io
 from Crypto import Random
-from Crypto.Random import get_random_bytes
 from base64 import *
+from aes_cfb import AES_CFB_ENC, AES_CFB_DEC, b64encode, pad, unpad
 
 # define ip and port
 HOST = 'localhost'
@@ -95,19 +95,22 @@ def decryptFileAES(filename):
     blockSize = 64*1024
     outputFile = "(dec)" + filename
 
-    with open(filename, 'rb') as inFile:
-        filesize = int(inFile.read(16))
-        IV = inFile.read(16)
+    with open(filename, 'rb') as infile:
+        filesize = int(infile.read(16))
+        IV = infile.read(16)
         key = b'0123456789ABCDEF'
         decryptor = AES.new(key, AES.MODE_CBC, IV)
 
-        with open(outputFile, 'wb') as outFile:
+        with open(outputFile, 'wb') as outfile:
             while True:
-                block = inFile.read(blockSize)
+                block = infile.read(blockSize)
+
                 if len(block) == 0:
                     break
-                outFile.write(decryptor.decrypt(block))
-            outFile.truncate(filesize)
+
+                outfile.write(decryptor.decrypt(block))
+
+            outfile.truncate(filesize)
 
     end = time.time()
     runtime = (end - start) * 10**3
@@ -227,9 +230,9 @@ def encryptFileRC4(filename):
     end = time.time()
     runtime = (end - start) * 10 ** 3
     try:
-        return '> Encrypted: ' + filename + ' complete.\n' + 'execution time ' + str(runtime) + 'ms.\n'
+        return 'Encryption process for file ' + filename + ' complete.\n' + 'execution time ' + str(runtime) + 'ms.\n'
     except:
-        return '> Error while encrypting, try again.\n'
+        return 'Oops! There is an error while encrypting.\n'
 
 # decrypt file RC4
 
@@ -261,9 +264,60 @@ def decryptFileRC4(filename):
     end = time.time()
     runtime = (end - start) * 10 ** 3
     try:
-        return '> Decrypted: ' + outputFile + '\n' + 'execution time ' + str(runtime) + 'ms.\n'
+        return 'Decryption process for file ' + filename + ' complete.\n' + 'execution time ' + str(runtime) + 'ms.\n'
     except:
-        return '> Error while decrypting, try again.\n'
+        return 'Oops! There is an error while decrypting.\n'
+
+# encrypt file with AES CFB
+
+
+def encryptFileAESCFB(filename):
+    start = time.time()
+    outputFile = "(aes_cfb)"+filename
+    ivnya = '0123456789ABCDEF'
+    key = '0123456789ABCDEF'
+
+    with open(filename, 'r', encoding='utf-8') as infile:
+        with open(outputFile, 'w') as outfile:
+            chunk = infile.read().replace('\n', '')
+            chunk = pad(str(chunk))
+            aescfb_fileName = "(aes_cfb)" + filename
+            f = open(aescfb_fileName, "a", encoding="utf-8")
+            outfile = AES_CFB_ENC(chunk, key, ivnya)
+            f.write(outfile)
+            f.close()
+
+    end = time.time()
+    runtime = (end - start) * 10 ** 3
+    try:
+        return 'Encryption process for file ' + filename + ' complete.\n' + 'execution time ' + str(runtime) + 'ms.\n'
+    except:
+        return 'Oops! There is an error while encrypting.\n'
+
+# decrypt file with AES CFB
+
+
+def decryptFileAESCFB(filename):
+    start = time.time()
+    outputFile = "(dec)" + filename
+    with open(filename, 'r', encoding='utf-8') as infile:
+        ivnya = '0123456789ABCDEF'
+        key = '0123456789ABCDEF'
+
+        with open(outputFile, 'w') as outfile:
+            chunk = infile.read()
+            # chunk = unpad(chunk)
+            f = open(outputFile, "a", encoding='utf-8')
+            aescfb_file = AES_CFB_DEC(chunk, key, ivnya)
+            f.write(aescfb_file)
+            f.close()
+            # outfile.write(format(unpad(AES_CBC_INV(chunk, key, IV))))
+    end = time.time()
+    runtime = (end - start) * 10 ** 3
+    try:
+        return 'Decryption process for file ' + filename + ' complete.\n' + 'execution time ' + str(runtime) + 'ms.\n'
+    except:
+        return 'Oops! There is an error while decrypting.\n'
 
 
 s.sendall(encryptData('SYMMETRIC CIPHER\n'))
@@ -319,12 +373,29 @@ while 1:
         except:
             args = 0
             s.sendall(encryptData(
-                'Error: invalid arguments.\nUsage: encryptFile file=this song.mp3\n\nUsage: decryptFile file=this song.mp3\n'))
+                'Error: invalid arguments.\n'))
         if args:
             if decrypted[:15] == "encryptFileRC4 ":
                 s.sendall(encryptData(encryptFileRC4(args['file'])))
             if decrypted[:15] == "decryptFileRC4 ":
                 s.sendall(encryptData(decryptFileRC4(args['file'])))
+        s.sendall(encryptData('EOFX'))
+    elif decrypted[:18] == "encryptFileAESCFB " or decrypted[:18] == "decryptFileAESCFB ":
+        try:
+            args = dict(e.split('=') for e in decrypted[18:].split(', '))
+            if len(args['file']):
+                pass
+            else:
+                args = 0
+        except:
+            args = 0
+            s.sendall(encryptData(
+                'Error: invalid arguments.\n'))
+        if args:
+            if decrypted[:18] == "encryptFileAESCFB ":
+                s.sendall(encryptData(encryptFileAESCFB(args['file'])))
+            if decrypted[:18] == "decryptFileAESCFB ":
+                s.sendall(encryptData(decryptFileAESCFB(args['file'])))
         s.sendall(encryptData('EOFX'))
     else:
         s.sendall(encryptData('Command Not Found\n'))
